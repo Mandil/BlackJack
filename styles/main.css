@@ -8,3 +8,6 @@ img{
 .card{
   display: inline;
 }
+strong{
+  margin-right: 10px;
+}
