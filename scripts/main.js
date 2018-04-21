@@ -1,8 +1,9 @@
 class Card {
-  constructor(suit, sign, value) {
+  constructor(suit, sign, value, image) {
     this.suit = suit;
     this.sign = sign;
     this.value = value;
+    this.image = image;
   }
   cardStringifyed(){
     return `${this.sign} of ${this.suit}`
@@ -22,7 +23,13 @@ class Deck {
 		let deck = [];
 		suits.forEach((suit)=>{
 			for(let card of cardValues){
-				deck.push(new Card(suit, card.name, card.value));
+        let image;
+        if (card.value === 10 || card.value === 1){
+          image = `${card.name[0]}${suit[0]}`
+        } else {
+          image = `${card.value}${suit[0]}`
+        }
+				deck.push(new Card(suit, card.name, card.value, image));
 			}
 		});
 		return deck;
@@ -53,49 +60,109 @@ class Game {
     this.deck = new Deck;
     this.user = [];
     this.computer = [];
+    this.start();
   }
+
+  start(){
+    $('.play').hide();
+    $('.game').show();
+  }
+
+  playAgain(){
+    if (this.deck.length < 16) {
+      this.deck.shuffle();
+    }
+    this.round();
+  }
+
+  drawCard(){
+    return this.deck.cards.pop()
+  }
+
   round(){
+    $('.result').empty();
+    $('.hit').show();
+    $('.stand').show();
+    $('.again').hide();
+    $('ul').empty();
+    $('.cardsdeck').empty();
     this.hit();
-    this.computer.push(this.deck.cards.pop());
+    this.computer.push(this.drawCard());
     this.hit();
-    this.computer.push(this.deck.cards.pop());
+    this.computer.push(this.drawCard());
+    $('.computer .score').text(`Score: ${this.computer[0].value}`);
+    $('.computer ul').append(`<li>${this.computer[0].cardStringifyed()}</li>`);
   }
+
   hit(){
-    this.user.push(this.deck.cards.pop());
-    $('.user .score').text(`Score: ${this.score(this.user)}`);
+    let card = this.drawCard();
+    this.user.push(card);
+    $('.user ul').append(`<li>${card.cardStringifyed()}</li>`);
+    $('.user .cardsdeck').append(`<img src="images/PNG/${card.image}.png" alt="${card.image}">`);
+    let score = this.score(this.user);
+    $('.user .score').text(`Score: ${score}`);
+    if(score > 21){
+      this.gameOver();
+    }
   }
+
   score(cards){
     return cards.reduce((sum, card) => {
       return sum + card.value;
     }, 0)
   }
+
+  gameOver(){
+    let playerScore = this.score(this.user);
+    let computerScore = this.score(this.computer);
+    let result;
+    if (playerScore > 21) {
+      result = 'Player loose!';
+    } else if (computerScore > 21 || playerScore > computerScore) {
+      result = 'Player win!';
+    } else if (playerScore === computerScore){
+      result = 'No winners!'
+    } else if (playerScore < computerScore) {
+      result = 'Player loose!';
+    }
+    $('.result').append(result);
+    $(':button').hide();
+    $('.again').show();
+    this.user = [];
+    this.computer = [];
+  }
+
+  stand(){
+    $('.computer ul').append(`<li>${this.computer[1].cardStringifyed()}</li>`);
+    $('.computer .score').text(`Score: ${this.score(this.computer)}`);
+    while(this.score(this.computer) < 17){
+      let card = this.drawCard();
+      this.computer.push(card);
+      $('.computer .score').text(`Score: ${this.score(this.computer)}`);
+      $('.computer ul').append(`<li>${card.cardStringifyed()}</li>`);
+    }
+    this.gameOver();
+  }
 }
 
 const playGame = ()=>{
-  $('.play').hide();
-  $('.game').show();
-  const game = new Game;
-  let user = $('.user');
-  let userCards = $('.user ul');
-  let computer = $('.computer');
-  let computerCards = $('.computer ul');
+  let game = new Game;
   let hit = $('.hit');
   let stand = $('.stand');
+  let again = $('.again');
+  again.on('click', ()=>{
+    game.playAgain();
+  });
 
   game.round();
-  computerCards.append(`<li>${game.computer[0].cardStringifyed()}</li>`);
-  game.user.forEach((card)=>{
-    userCards.append(`<li>${card.cardStringifyed()}</li>`);
-  })
   $('.hit').on('click', ()=>{
     game.hit();
-    userCards.append(`<li>${game.user[game.user.length - 1].cardStringifyed()}</li>`);
-
   });
-  console.log(game.deck);
-  console.log(game.user);
-  console.log(game.deck);
-  console.log(game.user);
+
+  stand.on('click', ()=>{
+    hit.hide();
+    game.stand();
+  })
 }
 
 $(()=>{
