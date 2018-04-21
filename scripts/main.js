@@ -53,6 +53,10 @@ class Deck {
 	drawCard(){
 		return this.cards.pop();
 	}
+
+  cardCount(){
+    return this.cards.length;
+  }
 }
 
 class Player {
@@ -65,28 +69,24 @@ class Player {
   }
 
   hasAce(){
-    return this.cards.some((elem)=> elem.value === 'Ace');
+    return this.cards.some((elem)=> elem.sign === 'Ace');
   }
 }
 
 class Game {
   constructor() {
     this.deck = new Deck;
-    this.user = [];
-    this.computer = [];
-    this.userScore = false;
-    this.dealerAce = false;
-    this.start();
-  }
-
-  start(){
+    this.player = new Player;
+    this.dealer = new Player;
     $('.play').hide();
     $('.game').show();
+    this.round();
   }
 
   playAgain(){
-    if (this.deck.length < 16) {
-      this.deck.shuffle();
+    let numberOfCards = this.deck.cardCount();
+    if (numberOfCards < 16) {
+      this.deck = new Deck;
     }
     this.round();
   }
@@ -104,69 +104,67 @@ class Game {
     $('.score').empty();
     $('.cardsdeck').empty();
     this.hit();
-    this.computer.push(this.drawCard());
+    this.dealer.cards.push(this.drawCard());
     this.hit();
-    this.computer.push(this.drawCard());
-    $('.computer .score').text(`Score: ${this.computer[0].value}`);
-    $('.computer p').append(`<strong>${this.computer[0].cardStringifyed()}</strong>`);
-    $('.computer .cardsdeck').append(`<img src="images/PNG/${this.computer[0].image}.png" alt="${this.computer[0].image}">`);
+    this.dealer.cards.push(this.drawCard());
+    $('.computer .score').text(`Score: ${this.dealer.cards[0].value}`);
+    $('.computer p').append(`<strong>${this.dealer.cards[0].cardStringifyed()}</strong>`);
+    $('.computer .cardsdeck').append(`<img src="images/PNG/${this.dealer.cards[0].image}.png" alt="${this.dealer.cards[0].image}">`);
 
   }
 
   hit(){
     let card = this.drawCard();
-    if (card.sign === 'Ace') {
-      console.log('its asssssssssssse!!!!!!!!!!!!!!!');
-      this.userAce = true;
-    }
-    this.user.push(card);
+    this.player.cards.push(card);
     $('.user p').append(`<strong>${card.cardStringifyed()}</strong>`);
     $('.user .cardsdeck').append(`<img src="images/PNG/${card.image}.png" alt="${card.image}">`);
-    let score = this.score(this.user);
-    $('.user .score').text(`Score: ${score} ${this.userAce ? `or ${score + 10}` : ``} `);
+    let score = this.player.score();
+    if (this.player.hasAce()) {
+      $('.user .score').text(`Score: ${score} or ${score + 10}`);
+
+    } else {
+      $('.user .score').text(`Score: ${score}`);
+    }
 
     if(score > 21){
       this.gameOver();
+    } else if (score === 21) {
+      this.stand();
     }
   }
 
-  score(cards){
-    return cards.reduce((sum, card) => {
-      return sum + card.value;
-    }, 0)
-  }
-
   gameOver(){
-    let playerScore = this.score(this.user);
-    let computerScore = this.score(this.computer);
+    let playerScore = this.player.score();
+    let dealerScore = this.dealer.score();
     let result;
     if (playerScore > 21) {
       result = 'Player loose!';
-    } else if (computerScore > 21 || playerScore > computerScore) {
+    } else if (dealerScore > 21 || playerScore > dealerScore) {
       result = 'Player win!';
-    } else if (playerScore === computerScore){
+    } else if (playerScore === dealerScore){
       result = 'No winners!'
-    } else if (playerScore < computerScore) {
+    } else if (playerScore < dealerScore) {
       result = 'Player loose!';
     }
     $('.result').append(result);
     $(':button').hide();
     $('.again').show();
-    this.user = [];
-    this.computer = [];
+    this.player.cards = [];
+    this.dealer.cards = [];
   }
 
   stand(){
-    if (this.userAce && this.score(this.user) < 11) {
+    $('.hit').hide();
+    if (this.player.hasAce() && this.player.score() < 11) {
 
     }
-    $('.computer p').append(`<strong>${this.computer[1].cardStringifyed()}</strong>`);
-    $('.computer .cardsdeck').append(`<img src="images/PNG/${this.computer[1].image}.png" alt="${this.computer[1].image}">`);
-    $('.computer .score').text(`Score: ${this.score(this.computer)}`);
-    while(this.score(this.computer) < 17){
+    $('.computer p').append(`<strong>${this.dealer.cards[1].cardStringifyed()}</strong>`);
+    $('.computer .cardsdeck').append(`<img src="images/PNG/${this.dealer.cards[1].image}.png" alt="${this.dealer.cards[1].image}">`);
+    $('.computer .score').text(`Score: ${this.dealer.score()}`);
+    while(this.dealer.score() < 17){
       let card = this.drawCard();
-      this.computer.push(card);
-      $('.computer .score').text(`Score: ${this.score(this.computer)}`);
+      this.dealer.cards.push(card);
+      $('.computer .score').text(`Score: ${this.dealer.score()}`);
       $('.computer p').append(`<strong>${card.cardStringifyed()}</strong>`);
       $('.computer .cardsdeck').append(`<img src="images/PNG/${card.image}.png" alt="${card.image}">`);
 
@@ -176,25 +174,12 @@ class Game {
 }
 
 const playGame = ()=>{
+
   let game = new Game;
-  let hit = $('.hit');
-  let stand = $('.stand');
-  let again = $('.again');
-  again.on('click', ()=>{
-    game.playAgain();
-  });
 
-  game.round();
-  $('.hit').on('click', ()=>{
-    game.hit();
-  });
-
-  stand.on('click', ()=>{
-    hit.hide();
-    game.stand();
-  })
+  $('.hit').on('click', ()=> game.hit());
+  $('.stand').on('click', ()=> game.stand());
+  $('.again').on('click', ()=> game.playAgain());
 }
 
-$(()=>{
-  $('.play').on('click', ()=>playGame());
-});
+$(()=> $('.play').on('click', ()=> playGame()));
