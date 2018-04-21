@@ -4,6 +4,9 @@ class Card {
     this.sign = sign;
     this.value = value;
   }
+  cardStringifyed(){
+    return `${this.sign} of ${this.suit}`
+  }
 }
 
 class Deck {
@@ -59,14 +62,42 @@ class Game {
   }
   hit(){
     this.user.push(this.deck.cards.pop());
+    $('.user .score').text(`Score: ${this.score(this.user)}`);
+  }
+  score(cards){
+    return cards.reduce((sum, card) => {
+      return sum + card.value;
+    }, 0)
   }
 }
 
-$(()=>{
+const playGame = ()=>{
+  $('.play').hide();
+  $('.game').show();
   const game = new Game;
+  let user = $('.user');
+  let userCards = $('.user ul');
+  let computer = $('.computer');
+  let computerCards = $('.computer ul');
+  let hit = $('.hit');
+  let stand = $('.stand');
+
+  game.round();
+  computerCards.append(`<li>${game.computer[0].cardStringifyed()}</li>`);
+  game.user.forEach((card)=>{
+    userCards.append(`<li>${card.cardStringifyed()}</li>`);
+  })
+  $('.hit').on('click', ()=>{
+    game.hit();
+    userCards.append(`<li>${game.user[game.user.length - 1].cardStringifyed()}</li>`);
+
+  });
   console.log(game.deck);
   console.log(game.user);
-  console.log(game.round());
   console.log(game.deck);
   console.log(game.user);
+}
+
+$(()=>{
+  $('.play').on('click', ()=>playGame());
 });
